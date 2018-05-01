@@ -7,19 +7,14 @@ import (
 	"github.com/go-kit/kit/sd"
 	"github.com/go-kit/kit/sd/lb"
 	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/endpoint"
-	"io"
 	"github.com/gorilla/mux"
 	httptransport "github.com/go-kit/kit/transport/http"
-	"encoding/json"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"fmt"
-	"strings"
-	"net/url"
-	"errors"
+	"ko/gateway"
 )
 
 func main() {
@@ -53,6 +48,8 @@ func main() {
 		DialKeepAlive: time.Second * 3,
 	}
 
+	logger := log.NewNopLogger()
+
 	// 2. 服务发现
 	etcdClient, err := etcdv3.NewClient(ctx, []string{etcdServer}, options)
 	if err != nil {
@@ -62,24 +59,39 @@ func main() {
 	// 1) 用户中心服务
 
 	// 创造实例
-	barPrefix := "/svc/ucenter"
-	logger := log.NewNopLogger()
-	instancer, err := etcdv3.NewInstancer(etcdClient, barPrefix, logger)
+	ucenterPrefix := "/svc/ucenter"
+	ucenterInstancer, err := etcdv3.NewInstancer(etcdClient, ucenterPrefix, logger)
 	if err != nil {
 		panic(err)
 	}
 
 	// 路由控制器构造
-	factory := svcFactory(ctx, "GET", "/svc/ucenter/v1/user/{UID}")
-	endpointer := sd.NewEndpointer(instancer, factory, logger)
-	balancer := lb.NewRoundRobin(endpointer)
-	retry := lb.Retry(3, 3*time.Second, balancer)
+	ucenterfactory := gateway.SvcFactory(ctx, "GET", "/svc/ucenter/v1/user/{param}")
+	ucenterendpointer := sd.NewEndpointer(ucenterInstancer, ucenterfactory, logger)
+	ucenterbalancer := lb.NewRoundRobin(ucenterendpointer)
+	ucenterretry := lb.Retry(3, 3*time.Second, ucenterbalancer)
 
 	// 路由
 	r := mux.NewRouter()
-	r.Handle("/svc/ucenter/v1/user/{UID}", httptransport.NewServer(retry, decodeGetRequest, encodeJSONResponse))
+	r.Handle("/svc/ucenter/v1/user/{param}", httptransport.NewServer(ucenterretry, gateway.DecodeGetRequest, gateway.EncodeJSONResponse))
 
-	// 2) xx服务...
+	// 2) 订单服务...
+	orderPrefix := "/svc/order"
+	orderInstancer, err := etcdv3.NewInstancer(etcdClient, orderPrefix, logger)
+	if err != nil {
+		panic(err)
+	}
+
+	// 路由控制器构造
+	orderfactory := gateway.SvcFactory(ctx, "GET", "/svc/order/v1/order")
+	orderendpointer := sd.NewEndpointer(orderInstancer, orderfactory, logger)
+	orderbalancer := lb.NewRoundRobin(orderendpointer)
+	orderretry := lb.Retry(3, 3*time.Second, orderbalancer)
+
+	// 路由
+	r.Handle("/svc/order/v1/order", httptransport.NewServer(orderretry, gateway.DecodeJsonRequest, gateway.EncodeJSONResponse))
+
+	// 3) xx服务...
 
 
 	// 3. 启动服务器
@@ -99,76 +111,3 @@ func main() {
 	// Run!
 	logger.Log("exit", <-errc)
 }
-
-func svcFactory(ctx context.Context, method, path string) sd.Factory {
-	return func(instance string) (endpoint.Endpoint, io.Closer, error) {
-		if !strings.HasPrefix(instance, "http") {
-			instance = "http://" + instance
-		}
-		tgt, err := url.Parse(instance)
-		fmt.Println("svcFactory url: ", tgt)
-		if err != nil {
-			return nil, nil, err
-		}
-		tgt.Path = path
-
-		var (
-			enc httptransport.EncodeRequestFunc
-			dec httptransport.DecodeResponseFunc
-		)
-		enc, dec = encodeGetRequest, decodeGetResponse
-
-		return httptransport.NewClient(method, tgt, enc, dec).Endpoint(), nil, nil
-	}
-}
-
-func encodeGetRequest(_ context.Context, req *http.Request, request interface{}) error {
-
-	data := request.(struct {
-		UID string `json:"s"`
-	})
-	req.URL.Path = strings.Replace(req.URL.Path, "{UID}", data.UID, -1)
-
-	//json
-	//var buf bytes.Buffer
-	//if err := json.NewEncoder(&buf).Encode(request); err != nil {
-	//	return err
-	//}
-	//req.Body = ioutil.NopCloser(&buf)
-
-	return nil
-}
-
-func encodeJSONResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	return json.NewEncoder(w).Encode(response)
-}
-
-func decodeGetResponse(ctx context.Context, resp *http.Response) (interface{}, error) {
-	var getuserResponse struct {
-		Name   string `json:"v"`
-		Err error `json:"err,omitempty"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&getuserResponse); err != nil {
-		return nil, err
-	}
-	return getuserResponse, nil
-}
-
-func decodeGetRequest(ctx context.Context, req *http.Request) (interface{}, error) {
-	var getuserRequest struct {
-		UID string `json:"s"`
-	}
-
-	vars := mux.Vars(req)
-	id, ok := vars["UID"]
-
-	if !ok {
-		return nil, errBadRoute
-	}
-	getuserRequest.UID = id
-	fmt.Println("request: ", id)
-	return getuserRequest, nil
-}
-
-var errBadRoute = errors.New("error argument")

@@ -10,14 +10,17 @@ type getuserRequest struct {
 }
 
 type getuserResponse struct {
-	Name   string `json:"v"`
-	Err error `json:"err,omitempty"`
+	Data  map[string]interface{}   `json:"data"`
+	Err   error                    `json:"err,omitempty"`
 }
 
 func makeGetUserEndpoint(s UcenterService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getuserRequest)
 		name, err := s.GetUser(req.UID)
-		return getuserResponse{Name: name, Err: err}, nil
+		data := map[string]interface{} {
+			"user" : name,
+		}
+		return getuserResponse{Data: data, Err: err}, nil
 	}
 }
