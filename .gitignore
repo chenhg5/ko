@@ -1,1 +1,4 @@
 .idea
+build/*
+services/order/build/*
+services/ucenter/build/*

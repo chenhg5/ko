@@ -6,7 +6,6 @@ import (
 	"io"
 	"strings"
 	"net/url"
-	"fmt"
 	"github.com/gorilla/mux"
 	"context"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -15,6 +14,7 @@ import (
 	"errors"
 	"bytes"
 	"io/ioutil"
+	"fmt"
 )
 
 // Api设计关键类，restful/json转换/数据格式指定/错误编码列表
@@ -28,7 +28,7 @@ func SvcFactory(ctx context.Context, method, path string) sd.Factory {
 			instance = "http://" + instance
 		}
 		tgt, err := url.Parse(instance)
-		fmt.Println("svcFactory url: ", tgt)
+		fmt.Println("listening svc: ", tgt)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -38,7 +38,12 @@ func SvcFactory(ctx context.Context, method, path string) sd.Factory {
 			enc httptransport.EncodeRequestFunc
 			dec httptransport.DecodeResponseFunc
 		)
-		enc, dec = EncodeGetRequest, DecodeGetResponse
+		if method == "GET" {
+			enc, dec = EncodeGetRequest, DecodeGetResponse
+		}
+		if method == "POST" {
+			enc, dec = EncodeJsonRequest, DecodeGetResponse
+		}
 
 		return httptransport.NewClient(method, tgt, enc, dec).Endpoint(), nil, nil
 	}

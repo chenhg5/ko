@@ -83,7 +83,7 @@ func main() {
 	}
 
 	// 路由控制器构造
-	orderfactory := gateway.SvcFactory(ctx, "GET", "/svc/order/v1/order")
+	orderfactory := gateway.SvcFactory(ctx, "POST", "/svc/order/v1/order")
 	orderendpointer := sd.NewEndpointer(orderInstancer, orderfactory, logger)
 	orderbalancer := lb.NewRoundRobin(orderendpointer)
 	orderretry := lb.Retry(3, 3*time.Second, orderbalancer)
