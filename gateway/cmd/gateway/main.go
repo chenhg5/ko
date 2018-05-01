@@ -102,6 +102,13 @@ func main() {
 		errc <- fmt.Errorf("%s", <-c)
 	}()
 
+	// pid := fmt.Sprintf("%d", os.Getpid())
+	// // TODO: pid文件位置放在全局设置中
+	// _, openErr := os.OpenFile("./gateway/pid", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	// if openErr == nil {
+	// 	ioutil.WriteFile("./gateway/pid", []byte(pid), 0)
+	// }
+
 	// HTTP transport.
 	go func() {
 		logger.Log("transport", "HTTP", "addr", httpAddr)
