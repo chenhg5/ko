@@ -31,3 +31,7 @@ curl http://localhost:4001/svc/ucenter/v1/user/122552323
     - [ ] logging
     - [ ] orm
     - [ ] mq
+    
+## 架构
+
+![架构](https://ws4.sinaimg.cn/large/006tNc79gy1fqwdjwim7qj31kw0xgdno.jpg)
