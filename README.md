@@ -12,6 +12,11 @@ curl http://localhost:4001/svc/ucenter/v1/user/122552323
 {"code":0,"msg":"ok","data":{"user":"122552323"}}
 ```
 
+## architecture
+
+
+![architecture](https://ws3.sinaimg.cn/large/006tNc79gy1fqwe7f2kn6j31kw0v1dli.jpg)
+
 ## todo
 
 - [ ] gateway
@@ -31,7 +36,4 @@ curl http://localhost:4001/svc/ucenter/v1/user/122552323
     - [ ] logging
     - [ ] orm
     - [ ] mq
-    
-## 架构
-
-![架构](https://ws3.sinaimg.cn/large/006tNc79gy1fqwe7f2kn6j31kw0v1dli.jpg)
+   
