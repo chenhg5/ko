@@ -20,7 +20,7 @@ curl http://localhost:4001/svc/ucenter/v1/user/122552323
 
 ## architecture
 
-### custom linus server architecture
+### traditional linus server architecture
 
 ![architecture](https://ws3.sinaimg.cn/large/006tNc79ly1fqwtlctza6j319i0p0afa.jpg)
 
