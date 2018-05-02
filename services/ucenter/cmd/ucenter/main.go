@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/go-kit/kit/sd/etcdv3"
 	"time"
-	"github.com/go-kit/kit/log"
 	"context"
 	"os"
 	"os/signal"
@@ -49,7 +48,14 @@ func main() {
 		DialKeepAlive: time.Second * 3,
 	}
 
-	// 2. 服务发现
+	// 2. 日志系统
+
+	var logger kitlog.Logger
+	logger = kitlog.NewLogfmtLogger(kitlog.NewSyncWriter(os.Stderr))
+	logger = kitlog.With(logger, "ts", kitlog.DefaultTimestampUTC)
+	httpLogger := kitlog.With(logger, "component", "http")
+
+	// 3. 服务发现
 	etcdClient, err := etcdv3.NewClient(ctx, []string{etcdServer}, options)
 	if err != nil {
 		panic(err)
@@ -59,7 +65,7 @@ func main() {
 	registrar := etcdv3.NewRegistrar(etcdClient, etcdv3.Service{
 		Key:   key,
 		Value: value,
-	}, log.NewNopLogger())
+	}, httpLogger)
 
 	// Register our instance.
 	registrar.Register()
@@ -71,11 +77,6 @@ func main() {
 	defer registrar.Deregister()
 
 	ucenterSvc := ucenter.UcenterService{}
-
-	var logger kitlog.Logger
-	logger = kitlog.NewLogfmtLogger(kitlog.NewSyncWriter(os.Stderr))
-	logger = kitlog.With(logger, "ts", kitlog.DefaultTimestampUTC)
-	httpLogger := kitlog.With(logger, "component", "http")
 
 	mux := http.NewServeMux()
 

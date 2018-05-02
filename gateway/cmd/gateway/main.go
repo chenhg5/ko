@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"fmt"
 	"ko/gateway"
+	"io"
 )
 
 func main() {
@@ -48,9 +49,20 @@ func main() {
 		DialKeepAlive: time.Second * 3,
 	}
 
-	logger := log.NewNopLogger()
+	// 2. 日志系统
 
-	// 2. 服务发现
+	Accessfile, err := os.OpenFile("access.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		panic(err)
+	}
+	defer Accessfile.Close()
+
+	var kitlogger log.Logger
+	kitlogger = log.NewLogfmtLogger(io.MultiWriter(os.Stderr, Accessfile))
+	kitlogger = log.With(kitlogger, "ts", log.DefaultTimestampUTC)
+	logger := log.With(kitlogger, "component", "http")
+
+	// 3. 服务发现
 	etcdClient, err := etcdv3.NewClient(ctx, []string{etcdServer}, options)
 	if err != nil {
 		panic(err)
@@ -94,7 +106,7 @@ func main() {
 	// 3) xx服务...
 
 
-	// 3. 启动服务器
+	// 4. 启动服务器
 	errc := make(chan error)
 	go func() {
 		c := make(chan os.Signal)

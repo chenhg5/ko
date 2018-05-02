@@ -23,7 +23,6 @@ curl http://localhost:4001/svc/ucenter/v1/user/122552323
     - [ ] rate limit
     - [ ] logging
         - [ ] access.log / error.log
-        - [ ] ELK
     - [ ] instrumentation
     - [ ] auth
         - [ ] jwt
@@ -36,4 +35,6 @@ curl http://localhost:4001/svc/ucenter/v1/user/122552323
     - [ ] logging
     - [ ] orm
     - [ ] mq
-   
+- [ ] code-generator-cmd-tool
+- [ ] graceful restart/project hot update
+- [ ] docker env
