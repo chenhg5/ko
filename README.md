@@ -15,7 +15,7 @@ curl http://localhost:4001/svc/ucenter/v1/user/122552323
 ## architecture
 
 
-![architecture](https://ws3.sinaimg.cn/large/006tNc79gy1fqwe7f2kn6j31kw0v1dli.jpg)
+![architecture](https://ws3.sinaimg.cn/large/006tNc79ly1fqwtlctza6j319i0p0afa.jpg)
 
 ## todo
 
