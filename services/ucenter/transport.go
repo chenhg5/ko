@@ -26,7 +26,7 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 }
 
 // MakeHandler returns a handler for the booking service.
-func MakeHandler(bs UcenterService, logger kitlog.Logger) http.Handler {
+func MakeHandler(bs UcenterServiceInterface, logger kitlog.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorLogger(logger),
 		kithttp.ServerErrorEncoder(encodeError),

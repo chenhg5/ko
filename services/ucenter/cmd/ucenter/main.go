@@ -11,10 +11,16 @@ import (
 	"net/http"
 	kitlog "github.com/go-kit/kit/log"
 	"ko/services/ucenter"
+	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"ko/services/ucenter/middleware"
 )
 
 func main() {
+
 	// 1. 配置
+
 	var (
 		etcdServer = "localhost:2379"      // in the change from v2 to v3, the schema is no longer necessary if connecting directly to an etcd v3 instance
 		ctx        = context.Background()
@@ -55,7 +61,30 @@ func main() {
 	logger = kitlog.With(logger, "ts", kitlog.DefaultTimestampUTC)
 	httpLogger := kitlog.With(logger, "component", "http")
 
-	// 3. 服务发现
+	// 3. 监控系统
+
+	fieldKeys := []string{"method", "error"}
+	requestCount := kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Namespace: "my_group",
+		Subsystem: "ucenter_service",
+		Name:      "request_count",
+		Help:      "Number of requests received.",
+	}, fieldKeys)
+	requestLatency := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
+		Namespace: "my_group",
+		Subsystem: "ucenter_service",
+		Name:      "request_latency_microseconds",
+		Help:      "Total duration of requests in microseconds.",
+	}, fieldKeys)
+	countResult := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
+		Namespace: "my_group",
+		Subsystem: "ucenter_service",
+		Name:      "count_result",
+		Help:      "The result of each count method.",
+	}, []string{}) // no fields here
+
+	// 4. 服务发现
+
 	etcdClient, err := etcdv3.NewClient(ctx, []string{etcdServer}, options)
 	if err != nil {
 		panic(err)
@@ -76,13 +105,17 @@ func main() {
 	// interim, which bypasses the defer stack.
 	defer registrar.Deregister()
 
-	ucenterSvc := ucenter.UcenterService{}
+	var ucenterSvc ucenter.UcenterServiceInterface
+	ucenterSvc = ucenter.UcenterService{}
+
+	ucenterSvc = middleware.InstrumentingMiddleware(requestCount, requestLatency, countResult)(ucenterSvc)
 
 	mux := http.NewServeMux()
 
 	mux.Handle("/svc/ucenter/v1/", ucenter.MakeHandler(ucenterSvc, httpLogger))
 
 	http.Handle("/", accessControl(mux))
+	http.Handle("/metrics", promhttp.Handler())
 
 	errs := make(chan error, 2)
 	go func() {

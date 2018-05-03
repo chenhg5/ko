@@ -14,7 +14,7 @@ type getuserResponse struct {
 	Err   error                    `json:"err,omitempty"`
 }
 
-func makeGetUserEndpoint(s UcenterService) endpoint.Endpoint {
+func makeGetUserEndpoint(s UcenterServiceInterface) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getuserRequest)
 		name, err := s.GetUser(req.UID)
