@@ -39,6 +39,7 @@ curl http://localhost:4001/svc/ucenter/v1/user/122552323
         - [ ] jwt
         - [ ] cookie
     - [ ] load balance
+    - [ ] error handle
 - [ ] svc 
     - [ ] connections
         - [ ] mysql
