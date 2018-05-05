@@ -21,6 +21,16 @@ import (
 // 数据转换
 // POST/PUT/DELETE/GET
 
+// 请求与响应关系
+// client   ->    gatewayProxy   ->    svc   ->   gatewayProxy  ->   client
+//                   server          server          client
+//                  decodeReq                       encodeReq
+//                  encodeRes                       decodeRes
+//
+// 请求流
+// gatewayProxy.server.decodeReq -> gatewayProxy.client.encodeReq -> gatewayProxy.client.decodeRes -> gatewayProxy.server.encodeRes
+
+
 // 服务工厂生成器
 func SvcFactory(ctx context.Context, method, path string) sd.Factory {
 	return func(instance string) (endpoint.Endpoint, io.Closer, error) {
@@ -52,7 +62,6 @@ func SvcFactory(ctx context.Context, method, path string) sd.Factory {
 
 // 客户端到内部服务：转换Get请求
 func EncodeGetRequest(_ context.Context, req *http.Request, request interface{}) error {
-
 	data := request.(commonUrlReq)
 	req.URL.Path = strings.Replace(req.URL.Path, "{param}", data.Param, -1)
 
