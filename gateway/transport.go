@@ -94,7 +94,6 @@ func DecodeGetResponse(ctx context.Context, resp *http.Response) (interface{}, e
 		return nil, err
 	}
 	if commonResponse.Err != "" {
-		// 判断错误，返回指定错误码
 		outputResponse.Msg  = commonResponse.Err
 		outputResponse.Code = 500
 		outputResponse.Data = map[string]interface{}{}

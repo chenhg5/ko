@@ -9,7 +9,7 @@ type getuserRequest struct {
 	UID string `json:"s"`
 }
 
-type getuserResponse struct {
+type commonResponse struct {
 	Code  int                      `json:"code"`
 	Msg   string                   `json:"msg"`
 	Data  map[string]interface{}   `json:"data"`
@@ -29,6 +29,6 @@ func makeGetUserEndpoint(s UcenterServiceInterface) endpoint.Endpoint {
 		} else {
 			errmsg = ""
 		}
-		return getuserResponse{Code: 0, Msg: "ok", Data: data, Err: errmsg}, nil
+		return commonResponse{Code: 0, Msg: "ok", Data: data, Err: errmsg}, nil
 	}
 }

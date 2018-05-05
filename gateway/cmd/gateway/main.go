@@ -141,14 +141,6 @@ func main() {
 // svc panic
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	//switch err {
-	//	case ErrUnknown:
-	//		w.WriteHeader(http.StatusNotFound)
-	//	case ErrInvalidArgument:
-	//		w.WriteHeader(http.StatusBadRequest)
-	//	default:
-	//		w.WriteHeader(http.StatusInternalServerError)
-	//}
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"code": http.StatusInternalServerError,
 		"msg": err.Error(),

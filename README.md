@@ -32,14 +32,14 @@ curl http://localhost:4001/svc/ucenter/v1/user/122552323
 
 - [ ] gateway
     - [ ] rate limit
-    - [ ] logging
-        - [ ] access.log / error.log
-    - [ ] instrumentation
+    - [x] logging
+        - [x] access.log / error.log
+    - [x] instrumentation
     - [ ] auth
         - [ ] jwt
         - [ ] cookie
     - [ ] load balance
-    - [ ] error handle
+    - [x] error handle
 - [ ] svc 
     - [ ] connections
         - [ ] mysql
