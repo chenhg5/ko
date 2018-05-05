@@ -88,13 +88,21 @@ func EncodeJSONResponse(_ context.Context, w http.ResponseWriter, response inter
 
 // 内部服务到客户端：解码Get响应
 func DecodeGetResponse(ctx context.Context, resp *http.Response) (interface{}, error) {
-	var getuserResponse commonRes
-	getuserResponse.Msg  = "ok"
-	getuserResponse.Code = 0
-	if err := json.NewDecoder(resp.Body).Decode(&getuserResponse); err != nil {
+	var commonResponse commonRes
+	var outputResponse outputRes
+	if err := json.NewDecoder(resp.Body).Decode(&commonResponse); err != nil {
 		return nil, err
 	}
-	return getuserResponse, nil
+	if commonResponse.Err != "" {
+		// 判断错误，返回指定错误码
+		outputResponse.Msg  = commonResponse.Err
+		outputResponse.Code = 500
+		outputResponse.Data = map[string]interface{}{}
+	} else {
+		outputResponse.Msg  = commonResponse.Msg
+		outputResponse.Code = commonResponse.Code
+	}
+	return outputResponse, nil
 }
 
 // 内部服务到客户端：解码Get请求
@@ -130,7 +138,12 @@ type commonRes struct {
 	Code  int                      `json:"code"`
 	Msg   string                   `json:"msg"`
 	Data  map[string]interface{}   `json:"data"`
-	Err   error                    `json:"err,omitempty"`
+	Err   string                   `json:"err,omitempty"`
+}
+type outputRes struct {
+	Code  int                      `json:"code"`
+	Msg   string                   `json:"msg"`
+	Data  map[string]interface{}   `json:"data"`
 }
 
 // 错误码

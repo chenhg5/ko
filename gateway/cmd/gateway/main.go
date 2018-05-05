@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"ko/gateway"
 	"io"
+	"encoding/json"
 )
 
 func main() {
@@ -83,9 +84,14 @@ func main() {
 	ucenterbalancer := lb.NewRoundRobin(ucenterendpointer)
 	ucenterretry := lb.Retry(3, 3*time.Second, ucenterbalancer)
 
+	opts := []httptransport.ServerOption{
+		httptransport.ServerErrorLogger(logger),
+		httptransport.ServerErrorEncoder(encodeError),
+	}
+
 	// 路由
 	r := mux.NewRouter()
-	r.Handle("/svc/ucenter/v1/user/{param}", httptransport.NewServer(ucenterretry, gateway.DecodeGetRequest, gateway.EncodeJSONResponse))
+	r.Handle("/svc/ucenter/v1/user/{param}", httptransport.NewServer(ucenterretry, gateway.DecodeGetRequest, gateway.EncodeJSONResponse, opts...))
 
 	// 2) 订单服务...
 	orderPrefix := "/svc/order"
@@ -129,4 +135,22 @@ func main() {
 
 	// Run!
 	logger.Log("exit", <-errc)
+}
+
+// encode errors from business-logic
+// svc panic
+func encodeError(_ context.Context, err error, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	//switch err {
+	//	case ErrUnknown:
+	//		w.WriteHeader(http.StatusNotFound)
+	//	case ErrInvalidArgument:
+	//		w.WriteHeader(http.StatusBadRequest)
+	//	default:
+	//		w.WriteHeader(http.StatusInternalServerError)
+	//}
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"code": http.StatusInternalServerError,
+		"msg": err.Error(),
+	})
 }

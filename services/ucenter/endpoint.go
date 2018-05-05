@@ -10,8 +10,10 @@ type getuserRequest struct {
 }
 
 type getuserResponse struct {
+	Code  int                      `json:"code"`
+	Msg   string                   `json:"msg"`
 	Data  map[string]interface{}   `json:"data"`
-	Err   error                    `json:"err,omitempty"`
+	Err   string                    `json:"err,omitempty"`
 }
 
 func makeGetUserEndpoint(s UcenterServiceInterface) endpoint.Endpoint {
@@ -21,6 +23,12 @@ func makeGetUserEndpoint(s UcenterServiceInterface) endpoint.Endpoint {
 		data := map[string]interface{} {
 			"user" : name,
 		}
-		return getuserResponse{Data: data, Err: err}, nil
+		var errmsg string
+		if err != nil {
+			errmsg = err.Error()
+		} else {
+			errmsg = ""
+		}
+		return getuserResponse{Code: 0, Msg: "ok", Data: data, Err: errmsg}, nil
 	}
 }
