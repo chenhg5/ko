@@ -19,6 +19,7 @@ func main() {
 	var ctx = context.Background()
 	etcdClient := ucenter.InitEtcd(ctx)
 	registrar  := ucenter.RegisterSvc(etcdClient, httpLogger)
+	// TODO: shutdown空指针报错
 	defer registrar.Deregister()
 
 	// 4. 路由服务
