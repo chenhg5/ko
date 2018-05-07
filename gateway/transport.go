@@ -164,7 +164,7 @@ func (router *Router) Get(path string, middlewares ...endpoint.Middleware) {
 	router.r.Handle(path, MakeHandler(
 		router.logger,
 		router.ins,
-		"Get",
+		"GET",
 		path,
 		middlewares...,
 	))
@@ -184,7 +184,7 @@ func (router *Router) JwtGet(path string, middlewares ...endpoint.Middleware) {
 	router.r.Handle(path, MakeJwtHandler(
 		router.logger,
 		router.ins,
-		"Get",
+		"GET",
 		path,
 		middlewares...,
 	))
