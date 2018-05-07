@@ -7,7 +7,7 @@ import (
 )
 
 func InitLogger() log.Logger {
-	Accessfile, err := os.OpenFile("access.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	Accessfile, err := os.OpenFile((*GetConfig())["access_log_path"], os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		panic(err)
 	}
