@@ -52,6 +52,9 @@ func SvcFactory(method string, path string) sd.Factory {
 			enc httptransport.EncodeRequestFunc
 			dec httptransport.DecodeResponseFunc
 		)
+
+		method = strings.ToUpper(method)
+
 		if method == "GET" {
 			enc, dec = EncodeGetRequest, DecodeGetResponse
 		}
