@@ -4,9 +4,9 @@ var config map[string]string
 
 func InitConfig() *map[string]string {
 	config = map[string]string{
-		"access_log_path" : "gateway/access.log",
+		"access_log_path" : "ucenter/access.log",
 		"jwt_auth_secret" : "secret",
-		"pid_path" : "gateway/pid",
+		"pid_path" : "ucenter/pid",
 		"server_port" : ":4002",
 	}
 	return &config

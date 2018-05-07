@@ -4,28 +4,50 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"os"
 	"os/signal"
-	"syscall"
 	"fmt"
-	"github.com/go-kit/kit/log"
+	kitlog "github.com/go-kit/kit/log"
+	"log"
 	"net/http"
+	"time"
+	"context"
+	"io/ioutil"
 )
 
-func RunServer(mux *http.ServeMux, logger log.Logger, httpAddr string)  {
+func RunServer(mux *http.ServeMux, logger kitlog.Logger, httpAddr string)  {
 	http.Handle("/", accessControl(mux))
 	http.Handle("/metrics", promhttp.Handler())
 
-	errs := make(chan error, 2)
+	srv := &http.Server{
+		Addr:    httpAddr,
+		Handler: mux,
+	}
+
 	go func() {
-		logger.Log("transport", "http", "address", httpAddr, "msg", "listening")
-		errs <- http.ListenAndServe(httpAddr, nil)
-	}()
-	go func() {
-		c := make(chan os.Signal)
-		signal.Notify(c, syscall.SIGINT)
-		errs <- fmt.Errorf("%s", <-c)
+		// service connections
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
 	}()
 
-	logger.Log("terminated", <-errs)
+	// Wait for interrupt signal to gracefully shutdown the server with
+	// a timeout of 10 seconds.
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	log.Println("Shutdown Server ...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	log.Println("Server exiting")
+
+	pid := fmt.Sprintf("%d", os.Getpid())
+	_, openErr := os.OpenFile((*GetConfig())["pid_path"], os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if openErr == nil {
+		ioutil.WriteFile((*GetConfig())["pid_path"], []byte(pid), 0)
+	}
 }
 
 func accessControl(h http.Handler) http.Handler {
