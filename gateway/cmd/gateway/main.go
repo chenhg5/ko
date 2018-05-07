@@ -28,5 +28,5 @@ func main() {
 	// 3) xx服务...
 
 	// 4. 启动服务器
-	gateway.RunServer(logger, ":4001", router)
+	gateway.RunServer(logger, (*gateway.GetConfig())["server_port"], router)
 }

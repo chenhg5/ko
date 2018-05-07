@@ -2,34 +2,47 @@ package gateway
 
 import (
 	"fmt"
-	"github.com/go-kit/kit/log"
+	kitlog "github.com/go-kit/kit/log"
 	"net/http"
 	"os"
 	"os/signal"
-	"syscall"
+	"io/ioutil"
+	"time"
+	"log"
+	"context"
 )
 
-func RunServer(logger log.Logger, httpAddr string, router *Router) {
-	errc := make(chan error)
+func RunServer(logger kitlog.Logger, httpAddr string, router *Router) {
+	srv := &http.Server{
+		Addr:    httpAddr,
+		Handler: router.r,
+	}
+
 	go func() {
-		c := make(chan os.Signal)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		errc <- fmt.Errorf("%s", <-c)
+		// service connections
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
 	}()
 
-	// pid := fmt.Sprintf("%d", os.Getpid())
-	// // TODO: pid文件位置放在全局设置中
-	// _, openErr := os.OpenFile("./gateway/pid", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	// if openErr == nil {
-	// 	ioutil.WriteFile("./gateway/pid", []byte(pid), 0)
-	// }
+	// Wait for interrupt signal to gracefully shutdown the server with
+	// a timeout of 10 seconds.
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	log.Println("Shutdown Server ...")
 
-	// HTTP transport.
-	go func() {
-		logger.Log("transport", "HTTP", "addr", httpAddr)
-		errc <- http.ListenAndServe(httpAddr, router.r)
-	}()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	log.Println("Server exiting")
 
-	// Run!
-	logger.Log("exit", <-errc)
+	pid := fmt.Sprintf("%d", os.Getpid())
+	_, openErr := os.OpenFile((*GetConfig())["pid_path"], os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if openErr == nil {
+		ioutil.WriteFile((*GetConfig())["pid_path"], []byte(pid), 0)
+	}
+
 }
