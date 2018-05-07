@@ -1,18 +1,37 @@
 package middleware
 
 import (
-	"github.com/go-kit/kit/metrics"
 	"fmt"
-	"time"
+	"github.com/go-kit/kit/metrics"
+	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
+	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"ko/services/ucenter"
+	"time"
 )
 
+var (
+	fieldKeys    = []string{"method", "error"}
+	requestCount = kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Namespace: "my_group",
+		Subsystem: "ucenter_service",
+		Name:      "request_count",
+		Help:      "Number of requests received.",
+	}, fieldKeys)
+	requestLatency = kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
+		Namespace: "my_group",
+		Subsystem: "ucenter_service",
+		Name:      "request_latency_microseconds",
+		Help:      "Total duration of requests in microseconds.",
+	}, fieldKeys)
+	countResult = kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
+		Namespace: "my_group",
+		Subsystem: "ucenter_service",
+		Name:      "count_result",
+		Help:      "The result of each count method.",
+	}, []string{}) // no fields here
+)
 
-func InstrumentingMiddleware(
-	requestCount metrics.Counter,
-	requestLatency metrics.Histogram,
-	countResult metrics.Histogram,
-) ucenter.ServiceMiddleware {
+func InstrumentingMiddleware() ucenter.ServiceMiddleware {
 	return func(next ucenter.UcenterServiceInterface) ucenter.UcenterServiceInterface {
 		return instrumentingMiddleware{requestCount, requestLatency, countResult, next}
 	}
